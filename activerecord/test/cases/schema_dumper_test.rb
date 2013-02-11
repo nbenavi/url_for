@@ -326,6 +326,31 @@ class SchemaDumperTest < ActiveRecord::TestCase
     assert_match %r{create_table "subscribers", id: false}, output
   end
 
+  def test_skip_if_mysql
+    skip "only if mysql is available" unless current_adapter?(:MysqlAdapter, :Mysql2Adapter)
+  
+    ActiveRecord::Base.connection.execute "DROP VIEW IF EXISTS v_book"
+    require 'debugger'
+    debugger
+    ActiveRecord::Base.connection.execute "CREATE VIEW v_book(id, name) AS SELECT id, name FROM Books"
+    debugger
+    v_book_columns = ActiveRecord::Base.connection.columns "v_book"
+    v_book_id_column = v_book_columns.find {|c| c.name == "id"}
+  
+    book_columns = ActiveRecord::Base.connection.columns "books"
+    book_id_column = book_columns.find {|c| c.name == "id"}
+    
+    puts "hello"
+  
+    #require 'test_helper'
+    #test "table and view should have the same default" do
+    assert_equal(book_id_column.default, v_book_id_column.default, "view and table default id do not match")
+    #end
+    #p v_book_id_column.default
+    #p book_id_column.default
+    # do some stuff
+  end
+  
   class CreateDogMigration < ActiveRecord::Migration
     def up
       create_table("dogs") do |t|
