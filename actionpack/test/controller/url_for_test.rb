@@ -1,4 +1,6 @@
 require 'abstract_unit'
+#require 'perftools'
+
 
 module AbstractController
   module Testing
@@ -30,6 +32,49 @@ module AbstractController
       end
 
       def test_anchor
+        
+        # #NOAM ADDED this
+        #         PerfTools::CpuProfiler.start("/tmp/add_numbers_profile") do
+        #           5_000_000.times{ 1+2+3+4+5 }
+        #         end
+        require 'benchmark'
+
+        n = 50000
+        Benchmark.bm(7) do |x|
+          x.report("for:")   { for i in 1..n; a = "1"; end }
+          x.report("times:") { n.times do   ; a = "1"; end }
+          x.report("upto:")  { 1.upto(n) do ; a = "1"; end }
+        end
+        
+        require 'benchmark/ips'
+
+        Benchmark.ips do |x|
+          # Typical mode, runs the block as many times as it can
+          x.report("addition") { 1 + 2 }
+
+          # To reduce overhead, the number of iterations is passed in
+          # and the block must run the code the specific number of times.
+          # Used for when the workload is very small and any overhead
+          # introduces incorrectable errors.
+          x.report("addition2") do |times|
+            i = 0
+            while i < times
+              1 + 2
+              i += 1
+            end
+          end
+
+          # To reduce overhead even more, grafts the code given into
+          # the loop that performs the iterations internally to reduce
+          # overhead. Typically not needed, use the |times| form instead.
+          x.report("addition3", "1 + 2")
+        end
+        
+        require 'perftools'
+        PerfTools::CpuProfiler.start("/tmp/add_numbers_profile")
+        5_000_000.times{ 1+2+3+4+5 }
+        PerfTools::CpuProfiler.stop
+        
         assert_equal('/c/a#anchor',
           W.new.url_for(:only_path => true, :controller => 'c', :action => 'a', :anchor => 'anchor')
         )
